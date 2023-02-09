@@ -2,10 +2,18 @@ package com.example.springhapimodeldemo.Controller;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.parser.IParser;
+import ca.uhn.fhir.rest.api.MethodOutcome;
+import com.example.springhapimodeldemo.Response.PatientResponse;
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.hl7.fhir.r4.model.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.expression.spel.support.BooleanTypedValue;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,18 +29,31 @@ public class PatientController {
     /*@Autowired
     FhirContext fhirContext;*/
 
-    @GetMapping("/{id}")
-    @JsonBackReference
-    @ResponseBody
-    public Patient retrievePatient(@PathVariable String id) {
+    @Operation(summary = "Get a Patient by its id")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Found the patient",
+                    content = { @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Patient.class)) }),
+            @ApiResponse(responseCode = "400", description = "Invalid id supplied",
+                    content = @Content),
+            @ApiResponse(responseCode = "404", description = "Patient not found",
+                    content = @Content) })
+    @GetMapping(value = "/{id}")
+    public ResponseEntity<Patient> retrievePatient(@PathVariable String id) {
         Patient patient = new Patient();
         // Id
         patient.setId("example");
+        patient.setIdElement(new IdType("example"));
 
         // Narrative
         Narrative narrative = patient.getText();
         narrative.setStatus(Narrative.NarrativeStatus.GENERATED);
-        narrative.setDivAsString("<div xmlns=\"http://www.w3.org/1999/xhtml\">\n\t\t\t<table>\n\t\t\t\t<tbody>\n\t\t\t\t\t<tr>\n\t\t\t\t\t\t<td>Name</td>\n\t\t\t\t\t\t<td>Peter James \n              <b>Chalmers</b> (&quot;Jim&quot;)\n            </td>\n\t\t\t\t\t</tr>\n\t\t\t\t\t<tr>\n\t\t\t\t\t\t<td>Address</td>\n\t\t\t\t\t\t<td>534 Erewhon, Pleasantville, Vic, 3999</td>\n\t\t\t\t\t</tr>\n\t\t\t\t\t<tr>\n\t\t\t\t\t\t<td>Contacts</td>\n\t\t\t\t\t\t<td>Home: unknown. Work: (03) 5555 6473</td>\n\t\t\t\t\t</tr>\n\t\t\t\t\t<tr>\n\t\t\t\t\t\t<td>Id</td>\n\t\t\t\t\t\t<td>MRN: 12345 (Acme Healthcare)</td>\n\t\t\t\t\t</tr>\n\t\t\t\t</tbody>\n\t\t\t</table>\n\t\t</div>");
+        narrative.setDivAsString("<div xmlns=\"http://www.w3.org/1999/xhtml\">\n\t\t\t<table>\n\t\t\t\t<tbody>\n\t\t\t\t\t<tr>" +
+                "\n\t\t\t\t\t\t<td>Name</td>\n\t\t\t\t\t\t<td>Peter James \n<b>Chalmers</b> (&quot;Jim&quot;)\n " +
+                "</td>\n\t\t\t\t\t</tr>\n\t\t\t\t\t<tr>\n\t\t\t\t\t\t<td>Address</td>\n\t\t\t\t\t\t<td>534 Erewhon, Pleasantville, Vic, 3999</td>" +
+                "\n\t\t\t\t\t</tr>\n\t\t\t\t\t<tr>\n\t\t\t\t\t\t<td>Contacts</td>\n\t\t\t\t\t\t<td>Home: unknown. Work: (03) 5555 6473</td>" +
+                "\n\t\t\t\t\t</tr>\n\t\t\t\t\t<tr>\n\t\t\t\t\t\t<td>Id</td>\n\t\t\t\t\t\t<td>MRN: 12345 (Acme Healthcare)</td>" +
+                "\n\t\t\t\t\t</tr>\n\t\t\t\t</tbody>\n\t\t\t</table>\n\t\t</div>");
 
         // Identifier
         Identifier identifier = patient.addIdentifier();
@@ -58,6 +79,8 @@ public class PatientController {
         firstName1.setValue("Peter");
         StringType secondName1 = name1.addGivenElement();
         secondName1.setValue("James");
+
+        firstName1.setId("1");
 
         HumanName name2 = patient.addName();
         name2.setUse(HumanName.NameUse.USUAL);
@@ -120,6 +143,6 @@ public class PatientController {
 
         System.out.println(parser.encodeResourceToString(patient));
 
-        return patient;
+        return new ResponseEntity<>(patient, HttpStatus.OK);
     }
 }
